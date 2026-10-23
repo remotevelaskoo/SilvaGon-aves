@@ -165,6 +165,8 @@ h2 { font-size: 17px; }
   font-weight: 600;
 }
 .demo-badge span { color: var(--amber); font-size: 10px; }
+.demo-badge.live { color: #245f52; border-color: #a9d2c7; background: #edf8f4; }
+.demo-badge.live span { color: var(--teal); }
 
 .icon-button {
   display: grid;
@@ -204,6 +206,7 @@ h2 { font-size: 17px; }
   outline: none;
 }
 .filters select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(58, 143, 123, 0.12); }
+.filters select:disabled { color: #6e7d74; background: #f1f4f2; cursor: not-allowed; }
 .filter-context { display: grid; justify-items: end; gap: 6px; padding: 0 4px 8px; }
 .filter-context strong { font-size: 12px; }
 
@@ -327,6 +330,7 @@ dialog::backdrop { background: rgba(10, 31, 25, 0.55); backdrop-filter: blur(3px
 .source-list span { padding: 10px; border-radius: 9px; background: var(--surface-soft); color: var(--ink-soft); font-size: 11px; }
 .source-list code { color: var(--ink); font-weight: 700; }
 .primary-button { justify-self: end; padding: 9px 15px; border: 0; border-radius: 9px; color: #fff; background: var(--deep); cursor: pointer; }
+.empty-state { margin: 14px 0; color: var(--ink-soft); font-size: 13px; text-align: center; }
 
 .toast { position: fixed; right: 26px; bottom: 26px; z-index: 50; max-width: 320px; padding: 12px 16px; border-radius: 11px; color: #fff; background: var(--deep-2); box-shadow: var(--shadow); font-size: 12px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: 180ms ease; }
 .toast.visible { opacity: 1; transform: translateY(0); }
