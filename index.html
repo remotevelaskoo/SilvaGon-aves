@@ -43,8 +43,8 @@
           <div class="connection-state">
             <span class="status-dot" aria-hidden="true"></span>
             <div>
-              <strong>Modo demonstração</strong>
-              <small>API ainda não conectada</small>
+              <strong id="connectionTitle">Modo demonstração</strong>
+              <small id="connectionDetail">API ainda não conectada</small>
             </div>
           </div>
           <button class="text-button" id="aboutDataButton" type="button">Sobre os dados</button>
@@ -59,7 +59,7 @@
             <p class="subtitle">Acompanhe a jornada digital, a operação humana e o desempenho das automações.</p>
           </div>
           <div class="topbar-actions">
-            <span class="demo-badge"><span aria-hidden="true">●</span> Dados demonstrativos</span>
+            <span class="demo-badge" id="dataBadge"><span aria-hidden="true">●</span> Dados demonstrativos</span>
             <button class="icon-button" id="refreshButton" type="button" aria-label="Atualizar dados">↻</button>
           </div>
         </header>
@@ -69,7 +69,7 @@
             <span>Período</span>
             <select id="periodFilter">
               <option value="30">Últimos 30 dias</option>
-              <option value="7">Últimos 7 dias</option>
+              <option value="7" selected>Últimos 7 dias</option>
               <option value="1">Hoje</option>
             </select>
           </label>
@@ -101,7 +101,7 @@
             <div class="sparkline" id="sessionsSparkline" aria-hidden="true"></div>
           </article>
           <article class="kpi-card">
-            <div class="kpi-label">Resolvidos pelo bot <span class="info-dot" title="Sessões concluídas sem agente humano">i</span></div>
+            <div class="kpi-label">Sem atuação humana <span class="info-dot" title="Sessões sem mensagem ou evento de atendimento humano">i</span></div>
             <strong class="kpi-value" id="containmentRate">—</strong>
             <span class="kpi-delta positive" id="containmentDelta">—</span>
             <div class="mini-progress"><span id="containmentProgress"></span></div>
@@ -217,7 +217,7 @@
 
         <footer class="page-footer">
           <span>Dashboard gerencial Botmaker</span>
-          <span>Estrutura preparada para integração via API v2</span>
+          <span id="footerSource">Estrutura preparada para integração via API v2</span>
         </footer>
       </main>
     </div>
@@ -231,8 +231,8 @@
           </div>
           <button class="icon-button" value="close" aria-label="Fechar">×</button>
         </div>
-        <p>Os números atuais são demonstrativos e servem apenas para validar o desenho da dashboard. Nenhuma chamada à API Botmaker é realizada nesta versão.</p>
-        <p>A integração real será feita no servidor, com credencial somente de leitura e armazenamento incremental das respostas.</p>
+        <p id="aboutPrimary">Os números atuais são demonstrativos e servem apenas para validar o desenho da dashboard. Nenhuma chamada à API Botmaker é realizada nesta versão.</p>
+        <p id="aboutSecondary">A integração real será feita no servidor, com credencial protegida e armazenamento incremental das respostas.</p>
         <div class="source-list">
           <span><code>/sessions</code> Fluxos, mensagens, variáveis e eventos</span>
           <span><code>/dashboards/agent-metrics</code> Atendimento por conversa</span>
