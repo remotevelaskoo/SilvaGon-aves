@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "check": "node --check app.js && node --check api/dashboard.js && node --check api/health.js && node --check api/sync.js && node --check lib/analytics.js && node --check lib/botmaker.js && node --check lib/database.js && node --check lib/dashboard-data.js"
+    "check": "node --check app.js && node --check api/dashboard.js && node --check api/health.js && node --check api/login.js && node --check api/logout.js && node --check api/session.js && node --check api/sync.js && node --check lib/analytics.js && node --check lib/auth.js && node --check lib/botmaker.js && node --check lib/database.js && node --check lib/dashboard-data.js && node --check test/auth.test.js",
+    "test": "node --test test/auth.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0"
   }
 }
+

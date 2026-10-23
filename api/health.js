@@ -1,10 +1,12 @@
 import { getDatabaseUrl } from "../lib/database.js";
+import { requireAuth } from "../lib/auth.js";
 
 export default function handler(request, response) {
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
     return response.status(405).json({ error: "Método não permitido" });
   }
+  if (!requireAuth(request, response)) return;
 
   const accessToken = process.env.BOTMAKER_ACCESS_TOKEN;
 
@@ -17,3 +19,4 @@ export default function handler(request, response) {
     syncConfigured: Boolean(process.env.CRON_SECRET)
   });
 }
+

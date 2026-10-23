@@ -1,5 +1,10 @@
 const DASHBOARD_API_URL = "/api/dashboard";
 const SAMPLE_DATA_URL = "./data/dashboard.sample.json";
+const AUTH_SESSION_URL = "/api/session";
+const AUTH_LOGIN_URL = "/api/login";
+const AUTH_LOGOUT_URL = "/api/logout";
+
+class AuthRequiredError extends Error {}
 
 const state = {
   data: null,
@@ -12,6 +17,66 @@ const percentFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+function showLogin(message = "") {
+  $("#dashboardShell").hidden = true;
+  $("#authGate").hidden = false;
+  $("#loginMessage").textContent = message;
+  $("#loginPassword").value = "";
+  window.setTimeout(() => $("#loginUsername").focus(), 0);
+}
+
+function unlockDashboard(user) {
+  $("#signedUsername").textContent = user?.username || "admin";
+  $("#authGate").hidden = true;
+  $("#dashboardShell").hidden = false;
+}
+
+async function readSession() {
+  const response = await fetch(AUTH_SESSION_URL, { credentials: "same-origin", cache: "no-store" });
+  if (response.status === 503) return { authenticated: false, configured: false };
+  if (!response.ok) return { authenticated: false, configured: true };
+  return response.json();
+}
+
+async function login(event) {
+  event.preventDefault();
+  const button = $("#loginButton");
+  const username = $("#loginUsername").value.trim();
+  const password = $("#loginPassword").value;
+  button.disabled = true;
+  button.textContent = "Validando acesso...";
+  $("#loginMessage").textContent = "";
+
+  try {
+    const response = await fetch(AUTH_LOGIN_URL, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Não foi possível entrar.");
+    unlockDashboard(payload.user);
+    await startDashboard();
+  } catch (error) {
+    showLogin(error.message || "Usuário ou senha inválidos.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Entrar no dashboard";
+  }
+}
+
+async function logout() {
+  $("#logoutButton").disabled = true;
+  try {
+    await fetch(AUTH_LOGOUT_URL, { method: "POST", credentials: "same-origin" });
+  } finally {
+    state.data = null;
+    $("#logoutButton").disabled = false;
+    showLogin("Sessão encerrada com segurança.");
+  }
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -23,12 +88,17 @@ function escapeHtml(value) {
 
 async function loadData(days = state.filters.period) {
   try {
-    const apiResponse = await fetch(`${DASHBOARD_API_URL}?days=${encodeURIComponent(days)}`);
+    const apiResponse = await fetch(`${DASHBOARD_API_URL}?days=${encodeURIComponent(days)}`, {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (apiResponse.status === 401) throw new AuthRequiredError("Sua sessão expirou.");
     if (apiResponse.ok) {
       const payload = await apiResponse.json();
       if (payload?.data) return payload.data;
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof AuthRequiredError) throw error;
     // O servidor estático local não expõe /api; a amostra é carregada abaixo.
   }
 
@@ -182,7 +252,7 @@ function renderSparkline(values) {
     const y = height - ((value - min) / Math.max(1, max - min)) * (height - 5) - 2;
     return `${x},${y}`;
   }).join(" ");
-  $("#sessionsSparkline").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#bfd943" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  $("#sessionsSparkline").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#d1ad70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function renderTrendChart(items) {
@@ -207,17 +277,17 @@ function renderTrendChart(items) {
     ? `<text class="chart-axis" x="${x(index)}" y="${height - 6}" text-anchor="middle">${escapeHtml(item.label)}</text>`
     : "").join("");
   const pointRadius = items.length > 31 ? 2 : 4;
-  const botDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.bot)}" r="${pointRadius}" fill="#3a8f7b"><title>${item.label}: ${item.bot} via bot</title></circle>`).join("");
-  const humanDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.human)}" r="${pointRadius}" fill="#7f941c"><title>${item.label}: ${item.human} via humano</title></circle>`).join("");
+  const botDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.bot)}" r="${pointRadius}" fill="#b58a4a"><title>${item.label}: ${item.bot} via bot</title></circle>`).join("");
+  const humanDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.human)}" r="${pointRadius}" fill="#5f564a"><title>${item.label}: ${item.human} via humano</title></circle>`).join("");
 
   $("#trendChart").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3a8f7b" stop-opacity="0.18"/><stop offset="1" stop-color="#3a8f7b" stop-opacity="0.01"/></linearGradient></defs>
+    <defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b58a4a" stop-opacity="0.2"/><stop offset="1" stop-color="#b58a4a" stop-opacity="0.01"/></linearGradient></defs>
     ${grid}<polygon class="chart-area" points="${areaPoints}"/><polyline class="chart-bot" points="${botPoints}"/><polyline class="chart-human" points="${humanPoints}"/>${botDots}${humanDots}${labels}
   </svg>`;
 }
 
 function renderOutcomes(model) {
-  const colors = ["#3a8f7b", "#bfd943", "#e9aa3b", "#d7dfda"];
+  const colors = ["#b58a4a", "#5f564a", "#d1ad70", "#ded5c8"];
   const actualTotal = model.outcomesTotal || 0;
   const total = actualTotal || 1;
   let cursor = 0;
@@ -265,7 +335,7 @@ function renderAutomation(model) {
   const successful = model.automationHealth.find((item) => item.id === "success")?.value ?? 0;
   const total = model.automationHealth.reduce((sum, item) => sum + item.value, 0) || 1;
   const rate = Math.round(successful / total * 100);
-  $("#automationRing").style.background = `conic-gradient(var(--teal) 0 ${rate}%, #dfe7e1 ${rate}% 100%)`;
+  $("#automationRing").style.background = `conic-gradient(var(--teal) 0 ${rate}%, #e5dccf ${rate}% 100%)`;
   $("#automationRingValue").textContent = `${rate}%`;
   $("#successfulExecutions").textContent = numberFormat.format(successful);
   $("#healthList").innerHTML = model.automationHealth.map((item) => `<div class="health-row">
@@ -344,6 +414,9 @@ function bindInteractions() {
       populateFilters();
       applyDataMode();
       render();
+    } catch (error) {
+      if (error instanceof AuthRequiredError) showLogin("Sua sessão expirou. Entre novamente.");
+      else showToast("Não foi possível atualizar o período.");
     } finally {
       event.target.disabled = false;
     }
@@ -358,8 +431,9 @@ function bindInteractions() {
       applyDataMode();
       render();
       showToast(state.data.meta?.mode !== "demo" ? "Dados reais atualizados a partir do histórico seguro." : "Base demonstrativa carregada.");
-    } catch {
-      showToast("Não foi possível atualizar os dados.");
+    } catch (error) {
+      if (error instanceof AuthRequiredError) showLogin("Sua sessão expirou. Entre novamente.");
+      else showToast("Não foi possível atualizar os dados.");
     }
   });
 
@@ -374,17 +448,47 @@ function bindInteractions() {
   ["visao-geral", "fluxos", "empreendimentos", "atendimento", "automacao"].forEach((id) => observer.observe(document.getElementById(id)));
 }
 
-async function init() {
+let dashboardStarted = false;
+
+async function startDashboard() {
   try {
     state.data = await loadData();
     populateFilters();
     applyDataMode();
-    bindInteractions();
+    if (!dashboardStarted) {
+      bindInteractions();
+      dashboardStarted = true;
+    }
     render();
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      showLogin("Sua sessão expirou. Entre novamente.");
+      return;
+    }
     console.error(error);
     showToast("Não foi possível carregar a base demonstrativa.");
   }
 }
 
+async function init() {
+  $("#loginForm").addEventListener("submit", login);
+  $("#logoutButton").addEventListener("click", logout);
+  try {
+    const session = await readSession();
+    if (!session.configured) {
+      showLogin("O acesso administrativo ainda está sendo configurado.");
+      return;
+    }
+    if (!session.authenticated) {
+      showLogin();
+      return;
+    }
+    unlockDashboard(session.user);
+    await startDashboard();
+  } catch {
+    showLogin("Não foi possível verificar o acesso. Tente novamente.");
+  }
+}
+
 init();
+
