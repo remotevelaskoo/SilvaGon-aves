@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dashboard gerencial Botmaker da Silva Gonçalves" />
+    <title>Silva Gonçalves | Dashboard Botmaker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="#visao-geral" aria-label="Silva Gonçalves — início">
+          <span class="brand-mark">SG</span>
+          <span class="brand-copy">
+            <strong>Silva Gonçalves</strong>
+            <small>Inteligência de atendimento</small>
+          </span>
+        </a>
+
+        <nav class="main-nav">
+          <a class="nav-item active" href="#visao-geral" data-section="visao-geral">
+            <span class="nav-icon" aria-hidden="true">⌂</span> Visão geral
+          </a>
+          <a class="nav-item" href="#fluxos" data-section="fluxos">
+            <span class="nav-icon" aria-hidden="true">⌁</span> Fluxos e cliques
+          </a>
+          <a class="nav-item" href="#empreendimentos" data-section="empreendimentos">
+            <span class="nav-icon" aria-hidden="true">◇</span> Empreendimentos
+          </a>
+          <a class="nav-item" href="#atendimento" data-section="atendimento">
+            <span class="nav-icon" aria-hidden="true">◎</span> Atendimento
+          </a>
+          <a class="nav-item" href="#automacao" data-section="automacao">
+            <span class="nav-icon" aria-hidden="true">↯</span> Automação
+          </a>
+        </nav>
+
+        <div class="sidebar-foot">
+          <div class="connection-state">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div>
+              <strong>Modo demonstração</strong>
+              <small>API ainda não conectada</small>
+            </div>
+          </div>
+          <button class="text-button" id="aboutDataButton" type="button">Sobre os dados</button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="mainContent">
+        <header class="topbar" id="visao-geral">
+          <div>
+            <p class="eyebrow">Botmaker + atendimento</p>
+            <h1>Visão gerencial</h1>
+            <p class="subtitle">Acompanhe a jornada digital, a operação humana e o desempenho das automações.</p>
+          </div>
+          <div class="topbar-actions">
+            <span class="demo-badge"><span aria-hidden="true">●</span> Dados demonstrativos</span>
+            <button class="icon-button" id="refreshButton" type="button" aria-label="Atualizar dados">↻</button>
+          </div>
+        </header>
+
+        <section class="filters" aria-label="Filtros do dashboard">
+          <label>
+            <span>Período</span>
+            <select id="periodFilter">
+              <option value="30">Últimos 30 dias</option>
+              <option value="7">Últimos 7 dias</option>
+              <option value="1">Hoje</option>
+            </select>
+          </label>
+          <label>
+            <span>Área</span>
+            <select id="areaFilter">
+              <option value="all">Todas as áreas</option>
+              <option value="pos-vendas">Pós-vendas</option>
+              <option value="comercial">Comercial</option>
+            </select>
+          </label>
+          <label>
+            <span>Empreendimento</span>
+            <select id="developmentFilter">
+              <option value="all">Todos os empreendimentos</option>
+            </select>
+          </label>
+          <div class="filter-context">
+            <span>Última atualização</span>
+            <strong id="lastUpdated">Base demonstrativa</strong>
+          </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="Indicadores principais">
+          <article class="kpi-card kpi-primary">
+            <div class="kpi-label">Atendimentos iniciados <span class="info-dot" title="Sessões iniciadas no período">i</span></div>
+            <strong class="kpi-value" id="totalSessions">—</strong>
+            <span class="kpi-delta positive" id="sessionsDelta">—</span>
+            <div class="sparkline" id="sessionsSparkline" aria-hidden="true"></div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Resolvidos pelo bot <span class="info-dot" title="Sessões concluídas sem agente humano">i</span></div>
+            <strong class="kpi-value" id="containmentRate">—</strong>
+            <span class="kpi-delta positive" id="containmentDelta">—</span>
+            <div class="mini-progress"><span id="containmentProgress"></span></div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Tempo de 1ª resposta <span class="info-dot" title="Tempo médio até a primeira resposta humana">i</span></div>
+            <strong class="kpi-value" id="firstResponse">—</strong>
+            <span class="kpi-delta positive" id="responseDelta">—</span>
+            <div class="kpi-note">Meta sugerida: até 5 min</div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Sucesso da automação <span class="info-dot" title="Execuções concluídas sem erro técnico">i</span></div>
+            <strong class="kpi-value" id="automationRate">—</strong>
+            <span class="kpi-delta positive" id="automationDelta">—</span>
+            <div class="mini-progress accent"><span id="automationProgress"></span></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Volume</p>
+                <h2>Atendimentos ao longo do período</h2>
+              </div>
+              <div class="legend" aria-label="Legenda">
+                <span><i class="legend-line bot"></i> Bot</span>
+                <span><i class="legend-line human"></i> Humano</span>
+              </div>
+            </div>
+            <div class="chart-wrap" id="trendChart" role="img" aria-label="Evolução diária de atendimentos do bot e humanos"></div>
+          </article>
+
+          <article class="panel outcome-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Resultado</p>
+                <h2>Destino dos atendimentos</h2>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut" id="outcomeDonut" role="img" aria-label="Distribuição dos resultados">
+                <div><strong id="donutTotal">—</strong><span>sessões</span></div>
+              </div>
+              <ul class="outcome-list" id="outcomeList"></ul>
+            </div>
+          </article>
+
+          <article class="panel" id="fluxos">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Jornada digital</p>
+                <h2>Opções mais acessadas</h2>
+              </div>
+              <span class="panel-meta">Cliques</span>
+            </div>
+            <div class="bar-list" id="clicksChart"></div>
+          </article>
+
+          <article class="panel" id="empreendimentos">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Interesse</p>
+                <h2>Empreendimentos mais acessados</h2>
+              </div>
+              <span class="panel-meta">Sessões únicas</span>
+            </div>
+            <div class="bar-list development-bars" id="developmentsChart"></div>
+          </article>
+
+          <article class="panel panel-wide" id="atendimento">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Equipe</p>
+                <h2>Atendimento por agente</h2>
+              </div>
+              <span class="panel-meta">Volume + qualidade operacional</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agente</th>
+                    <th>Área</th>
+                    <th>Atendimentos</th>
+                    <th>1ª resposta</th>
+                    <th>Resolvidos</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody id="agentsTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel automation-panel" id="automacao">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Saúde técnica</p>
+                <h2>Execuções da automação</h2>
+              </div>
+            </div>
+            <div class="automation-summary">
+              <div class="automation-ring" id="automationRing"><strong id="automationRingValue">—</strong></div>
+              <div>
+                <strong id="successfulExecutions">—</strong>
+                <span>execuções concluídas</span>
+              </div>
+            </div>
+            <div class="health-list" id="healthList"></div>
+          </article>
+        </section>
+
+        <footer class="page-footer">
+          <span>Dashboard gerencial Botmaker</span>
+          <span>Estrutura preparada para integração via API v2</span>
+        </footer>
+      </main>
+    </div>
+
+    <dialog id="aboutDataDialog">
+      <form method="dialog" class="dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="panel-kicker">Transparência</p>
+            <h2>Sobre esta base</h2>
+          </div>
+          <button class="icon-button" value="close" aria-label="Fechar">×</button>
+        </div>
+        <p>Os números atuais são demonstrativos e servem apenas para validar o desenho da dashboard. Nenhuma chamada à API Botmaker é realizada nesta versão.</p>
+        <p>A integração real será feita no servidor, com credencial somente de leitura e armazenamento incremental das respostas.</p>
+        <div class="source-list">
+          <span><code>/sessions</code> Fluxos, mensagens, variáveis e eventos</span>
+          <span><code>/dashboards/agent-metrics</code> Atendimento por conversa</span>
+          <span><code>/agents</code> Cadastro e filas da equipe</span>
+        </div>
+        <button class="primary-button" value="close">Entendi</button>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>
+
