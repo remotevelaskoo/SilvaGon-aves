@@ -3,7 +3,7 @@ const SAMPLE_DATA_URL = "./data/dashboard.sample.json";
 
 const state = {
   data: null,
-  filters: { period: "30", area: "all", development: "all" },
+  filters: { period: "7", area: "all", development: "all" },
 };
 
 const numberFormat = new Intl.NumberFormat("pt-BR");
@@ -12,9 +12,18 @@ const percentFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 async function loadData() {
   try {
-    const apiResponse = await fetch(DASHBOARD_API_URL, { cache: "no-store" });
+    const apiResponse = await fetch(DASHBOARD_API_URL);
     if (apiResponse.ok) {
       const payload = await apiResponse.json();
       if (payload?.data) return payload.data;
@@ -41,6 +50,19 @@ function getMultiplier() {
 
 function filteredModel() {
   const data = state.data;
+  if (data.meta?.mode === "live") {
+    const developments = data.developments.filter(
+      (item) => state.filters.development === "all" || item.id === state.filters.development
+    );
+    const outcomesTotal = data.outcomes.reduce((sum, item) => sum + item.value, 0);
+
+    return {
+      ...data,
+      developments,
+      outcomesTotal,
+    };
+  }
+
   const multiplier = getMultiplier();
   const periodRate = state.filters.period === "1" ? -1.2 : state.filters.period === "7" ? 3.6 : data.summary.sessionsDelta;
   const areaAdjustment = state.filters.area === "comercial" ? -4 : state.filters.area === "pos-vendas" ? 2 : 0;
@@ -101,6 +123,7 @@ function filteredModel() {
 }
 
 function formatDuration(seconds) {
+  if (!Number.isFinite(seconds)) return "n/d";
   const minutes = Math.floor(seconds / 60);
   const remaining = seconds % 60;
   return `${minutes}min ${String(remaining).padStart(2, "0")}s`;
@@ -112,19 +135,28 @@ function initials(name) {
 
 function renderSummary(model) {
   const { summary } = model;
+  const isLive = model.meta?.mode === "live";
   $("#totalSessions").textContent = numberFormat.format(summary.sessions);
-  $("#sessionsDelta").textContent = `${summary.sessionsDelta >= 0 ? "+" : ""}${percentFormat.format(summary.sessionsDelta)}% vs. período anterior`;
-  $("#sessionsDelta").className = `kpi-delta ${summary.sessionsDelta >= 0 ? "positive" : "negative"}`;
+  $("#sessionsDelta").textContent = isLive
+    ? "Período consolidado de 7 dias"
+    : `${summary.sessionsDelta >= 0 ? "+" : ""}${percentFormat.format(summary.sessionsDelta)}% vs. período anterior`;
+  $("#sessionsDelta").className = `kpi-delta ${!isLive && summary.sessionsDelta < 0 ? "negative" : "positive"}`;
 
   $("#containmentRate").textContent = `${percentFormat.format(summary.containment)}%`;
-  $("#containmentDelta").textContent = `+${percentFormat.format(summary.containmentDelta)} p.p. no período`;
+  $("#containmentDelta").textContent = isLive
+    ? "Sessões sem atuação de agente"
+    : `+${percentFormat.format(summary.containmentDelta)} p.p. no período`;
   $("#containmentProgress").style.width = `${summary.containment}%`;
 
   $("#firstResponse").textContent = formatDuration(summary.firstResponseSeconds);
-  $("#responseDelta").textContent = `${summary.responseImprovement}% mais rápido`;
+  $("#responseDelta").textContent = isLive
+    ? (summary.firstResponseSeconds === null ? "Métrica não retornada pela API" : "Média do período")
+    : `${summary.responseImprovement}% mais rápido`;
 
   $("#automationRate").textContent = `${percentFormat.format(summary.automation)}%`;
-  $("#automationDelta").textContent = `+${percentFormat.format(summary.automationDelta)} p.p. no período`;
+  $("#automationDelta").textContent = isLive
+    ? "Sem falha ou ausência de informação sinalizada"
+    : `+${percentFormat.format(summary.automationDelta)} p.p. no período`;
   $("#automationProgress").style.width = `${summary.automation}%`;
 
   renderSparkline(model.trends.map((item) => item.bot + item.human));
@@ -160,7 +192,7 @@ function renderTrendChart(items) {
     const gy = pad.top + index * ((height - pad.top - pad.bottom) / 4);
     return `<line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${gy}" y2="${gy}"/><text class="chart-axis" x="0" y="${gy + 4}">${value}</text>`;
   }).join("");
-  const labels = items.map((item, index) => `<text class="chart-axis" x="${x(index)}" y="${height - 6}" text-anchor="middle">${item.label}</text>`).join("");
+  const labels = items.map((item, index) => `<text class="chart-axis" x="${x(index)}" y="${height - 6}" text-anchor="middle">${escapeHtml(item.label)}</text>`).join("");
   const botDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.bot)}" r="4" fill="#3a8f7b"><title>${item.label}: ${item.bot} via bot</title></circle>`).join("");
   const humanDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.human)}" r="4" fill="#7f941c"><title>${item.label}: ${item.human} via humano</title></circle>`).join("");
 
@@ -172,7 +204,8 @@ function renderTrendChart(items) {
 
 function renderOutcomes(model) {
   const colors = ["#3a8f7b", "#bfd943", "#e9aa3b", "#d7dfda"];
-  const total = model.outcomesTotal || 1;
+  const actualTotal = model.outcomesTotal || 0;
+  const total = actualTotal || 1;
   let cursor = 0;
   const segments = model.outcomes.map((item, index) => {
     const start = cursor;
@@ -180,29 +213,37 @@ function renderOutcomes(model) {
     return `${colors[index]} ${start}% ${cursor}%`;
   });
   $("#outcomeDonut").style.background = `conic-gradient(${segments.join(",")})`;
-  $("#donutTotal").textContent = numberFormat.format(total);
+  $("#donutTotal").textContent = numberFormat.format(actualTotal);
   $("#outcomeList").innerHTML = model.outcomes.map((item, index) => {
     const percentage = item.value / total * 100;
-    return `<li><i style="background:${colors[index]}"></i><span>${item.label}</span><strong>${percentFormat.format(percentage)}%</strong></li>`;
+    return `<li><i style="background:${colors[index]}"></i><span>${escapeHtml(item.label)}</span><strong>${percentFormat.format(percentage)}%</strong></li>`;
   }).join("");
 }
 
 function renderBars(selector, items) {
+  if (!items.length) {
+    $(selector).innerHTML = '<p class="empty-state">Nenhum dado identificado no período.</p>';
+    return;
+  }
   const max = Math.max(...items.map((item) => item.value), 1);
   $(selector).innerHTML = items.map((item) => `<div class="bar-row">
-    <div class="bar-label"><span>${item.label}</span><strong>${numberFormat.format(item.value)}</strong></div>
+    <div class="bar-label"><span>${escapeHtml(item.label)}</span><strong>${numberFormat.format(item.value)}</strong></div>
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, item.value / max * 100)}%"></div></div>
   </div>`).join("");
 }
 
 function renderAgents(agents) {
+  if (!agents.length) {
+    $("#agentsTable").innerHTML = '<tr><td colspan="6" class="empty-state">Nenhum atendimento humano identificado no período.</td></tr>';
+    return;
+  }
   $("#agentsTable").innerHTML = agents.map((agent) => `<tr>
-    <td><div class="agent-cell"><span class="avatar">${initials(agent.name)}</span><strong>${agent.name}</strong></div></td>
-    <td>${agent.area}</td>
+    <td><div class="agent-cell"><span class="avatar">${escapeHtml(initials(agent.name))}</span><strong>${escapeHtml(agent.name)}</strong></div></td>
+    <td>${escapeHtml(agent.area)}</td>
     <td><strong>${numberFormat.format(agent.sessions)}</strong></td>
-    <td>${agent.firstResponse}</td>
+    <td>${agent.firstResponse || formatDuration(agent.firstResponseSeconds)}</td>
     <td>${percentFormat.format(agent.resolution)}%</td>
-    <td><span class="status-pill ${agent.status}">${agent.statusLabel}</span></td>
+    <td><span class="status-pill ${escapeHtml(agent.status)}">${escapeHtml(agent.statusLabel)}</span></td>
   </tr>`).join("");
 }
 
@@ -214,7 +255,7 @@ function renderAutomation(model) {
   $("#automationRingValue").textContent = `${rate}%`;
   $("#successfulExecutions").textContent = numberFormat.format(successful);
   $("#healthList").innerHTML = model.automationHealth.map((item) => `<div class="health-row">
-    <span>${item.label}</span><strong>${numberFormat.format(item.value)}</strong><small>${item.detail}</small>
+    <span>${escapeHtml(item.label)}</span><strong>${numberFormat.format(item.value)}</strong><small>${escapeHtml(item.detail)}</small>
   </div>`).join("");
 }
 
@@ -231,12 +272,41 @@ function render() {
 
 function populateFilters() {
   const select = $("#developmentFilter");
+  select.innerHTML = '<option value="all">Todos os empreendimentos</option>';
   state.data.developments.forEach((item) => {
     const option = document.createElement("option");
     option.value = item.id;
     option.textContent = item.label;
     select.append(option);
   });
+}
+
+function applyDataMode() {
+  const isLive = state.data.meta?.mode === "live";
+  const generatedAt = state.data.meta?.generatedAt ? new Date(state.data.meta.generatedAt) : null;
+  $("#connectionTitle").textContent = isLive ? "Integração ativa" : "Modo demonstração";
+  $("#connectionDetail").textContent = isLive ? "Botmaker API conectada" : "API indisponível; usando amostra";
+  $("#dataBadge").innerHTML = `<span aria-hidden="true">●</span> ${isLive ? "Dados reais · 7 dias" : "Dados demonstrativos"}`;
+  $("#dataBadge").classList.toggle("live", isLive);
+  $("#lastUpdated").textContent = generatedAt && !Number.isNaN(generatedAt.getTime())
+    ? generatedAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : "Base demonstrativa";
+  $("#footerSource").textContent = isLive ? "Integração ativa via Botmaker API v2 · cache de 6 horas" : "Base demonstrativa de contingência";
+  $("#aboutPrimary").textContent = isLive
+    ? "Os indicadores são agregados no servidor a partir dos últimos sete dias da Botmaker. Mensagens, telefones, e-mails, CPF e valores sensíveis não são enviados ao navegador."
+    : "Os números atuais são demonstrativos e servem apenas para validar o desenho da dashboard.";
+  $("#aboutSecondary").textContent = isLive
+    ? "A resposta fica em cache por seis horas para reduzir o consumo da cota de BI. A consulta atual utiliza somente a primeira página, com até 500 sessões."
+    : "A interface usa esta amostra quando a API não está disponível.";
+
+  $("#periodFilter").value = isLive ? "7" : state.filters.period;
+  $("#periodFilter").disabled = isLive;
+  $("#areaFilter").value = "all";
+  $("#areaFilter").disabled = isLive;
+  if (isLive) {
+    state.filters.period = "7";
+    state.filters.area = "all";
+  }
 }
 
 function showToast(message) {
@@ -254,9 +324,18 @@ function bindInteractions() {
     });
   });
 
-  $("#refreshButton").addEventListener("click", () => {
+  $("#refreshButton").addEventListener("click", async () => {
     $("#refreshButton").animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 450 });
-    showToast("Base demonstrativa recarregada. A API ainda não está conectada.");
+    try {
+      state.data = await loadData();
+      state.filters.development = "all";
+      populateFilters();
+      applyDataMode();
+      render();
+      showToast(state.data.meta?.mode === "live" ? "Dados reais atualizados a partir do cache seguro." : "Base demonstrativa carregada.");
+    } catch {
+      showToast("Não foi possível atualizar os dados.");
+    }
   });
 
   const dialog = $("#aboutDataDialog");
@@ -274,6 +353,7 @@ async function init() {
   try {
     state.data = await loadData();
     populateFilters();
+    applyDataMode();
     bindInteractions();
     render();
   } catch (error) {
