@@ -6,9 +6,10 @@ Primeira versão visual da dashboard, construída como página web portátil e p
 
 - A interface está funcional e responsiva.
 - Os filtros atualizam todos os componentes da página.
-- A rota `/api/dashboard` consolida sete dias de sessões, agentes e métricas da Botmaker.
-- A resposta contém somente agregados; CPF, telefone, e-mail, mensagens e valores sensíveis não são enviados ao navegador.
-- A resposta fica em cache na CDN por seis horas para limitar o consumo da cota de BI.
+- A rota protegida `/api/sync` consulta a Botmaker em blocos, segue a paginação e consolida 180 dias no Neon Postgres.
+- A rota `/api/dashboard` oferece os períodos de 1, 7, 30, 90 e 180 dias a partir do histórico agregado.
+- CPF, telefone, e-mail, mensagens, links de boleto e valores sensíveis não são gravados no histórico nem enviados ao navegador.
+- A resposta pública fica em cache na CDN por 15 minutos.
 - Os dados em `data/dashboard.sample.json` são usados apenas como contingência quando a API não responde.
 - A rota `/api/health` informa somente se as configurações necessárias estão presentes, sem expor seus valores.
 
@@ -28,7 +29,7 @@ Depois abra `http://localhost:4173`.
 2. Importe o repositório na Vercel, usando esta pasta como diretório raiz do projeto.
 3. Não é necessário comando de build para a versão atual.
 4. Cadastre `BOTMAKER_ACCESS_TOKEN` nas variáveis de ambiente da Vercel.
-5. `DATABASE_URL` e `CRON_SECRET` permanecem reservados para a futura coleta incremental.
+5. Conecte um Neon Postgres para disponibilizar `DATABASE_URL` e cadastre um `CRON_SECRET` aleatório com pelo menos 16 caracteres.
 6. Faça um novo deployment depois de alterar variáveis de ambiente.
 
 O arquivo `vercel.json` já adiciona cabeçalhos básicos de segurança. O token real nunca deve ser colocado em `.env.example`, no Git ou em código executado pelo navegador.
@@ -37,14 +38,7 @@ O arquivo `vercel.json` já adiciona cabeçalhos básicos de segurança. O token
 
 Qualquer servidor de arquivos estáticos pode publicar esta versão. Para Nginx ou Apache, copie o conteúdo da pasta para o diretório público do servidor.
 
-Quando o volume ultrapassar 500 sessões por período, a evolução recomendada será:
-
-1. Vercel Functions responsáveis por acessar dados consolidados e autenticar na Botmaker quando necessário.
-2. Coleta incremental de `/sessions`, `/dashboards/agent-metrics`, `/agents`, `/intents`, `/variables` e `/typifications`.
-3. Persistência em PostgreSQL para evitar consultas repetidas e consumo desnecessário da cota BI.
-4. Endpoint interno `GET /api/dashboard`, já implementado e consumido pela interface.
-5. Token Botmaker armazenado somente no servidor.
-6. Vercel Cron para sincronização incremental; importações históricas volumosas devem ser executadas separadamente.
+A sincronização diária está configurada para 03:00 UTC no `vercel.json`. Na primeira execução, ela percorre até 30 blocos de sete dias; caso a cota diária da Botmaker seja atingida, o progresso já concluído fica salvo e a carga continua na execução seguinte.
 
 ## Contrato esperado para os dados
 
@@ -58,5 +52,4 @@ O arquivo demonstrativo já representa o formato consolidado que a interface con
 - `agents`: operação por atendente;
 - `automationHealth`: situação das execuções automatizadas.
 
-Quando houver uma exportação real da Botmaker, este contrato será ajustado às respostas observadas antes da implementação do backend.
-
+O campo `enterprise_id` da Botmaker alimenta o ranking de empreendimentos. Um mapeamento entre os códigos e nomes comerciais pode ser acrescentado quando essa relação estiver disponível.

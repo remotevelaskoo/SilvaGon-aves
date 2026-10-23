@@ -1,3 +1,5 @@
+import { getDatabaseUrl } from "../lib/database.js";
+
 export default function handler(request, response) {
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
@@ -11,7 +13,7 @@ export default function handler(request, response) {
     status: "ok",
     application: "botmaker-dashboard",
     botmakerConfigured: Boolean(accessToken),
-    databaseConfigured: Boolean(process.env.DATABASE_URL)
+    databaseConfigured: Boolean(getDatabaseUrl()),
+    syncConfigured: Boolean(process.env.CRON_SECRET)
   });
 }
-
