@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "mode": "demo",
+    "generatedAt": "2026-10-23T10:15:00-03:00",
+    "source": "Dados fictícios para validação visual"
+  },
+  "summary": {
+    "sessions": 1284,
+    "sessionsDelta": 8.4,
+    "containment": 68,
+    "containmentDelta": 4.2,
+    "firstResponseSeconds": 222,
+    "responseImprovement": 12,
+    "automation": 92.4,
+    "automationDelta": 1.8
+  },
+  "trends": [
+    { "label": "24 set", "bot": 96, "human": 42 },
+    { "label": "29 set", "bot": 112, "human": 49 },
+    { "label": "04 out", "bot": 106, "human": 45 },
+    { "label": "09 out", "bot": 139, "human": 52 },
+    { "label": "14 out", "bot": 151, "human": 48 },
+    { "label": "19 out", "bot": 142, "human": 55 },
+    { "label": "23 out", "bot": 166, "human": 61 }
+  ],
+  "outcomes": [
+    { "label": "Resolvido pelo bot", "value": 873 },
+    { "label": "Transferido", "value": 248 },
+    { "label": "Abandonado", "value": 103 },
+    { "label": "Em andamento", "value": 60 }
+  ],
+  "clicks": [
+    { "label": "2ª via de boleto", "value": 438, "area": "pos-vendas" },
+    { "label": "Consultar empreendimento", "value": 326, "area": "comercial" },
+    { "label": "Negociação e reparcelamento", "value": 241, "area": "pos-vendas" },
+    { "label": "Falar com atendente", "value": 184, "area": "all" },
+    { "label": "Atualização cadastral", "value": 95, "area": "pos-vendas" }
+  ],
+  "developments": [
+    { "id": "imperatriz", "label": "Imperatriz", "value": 412 },
+    { "id": "residencial-a", "label": "Residencial A · demonstração", "value": 286 },
+    { "id": "residencial-b", "label": "Residencial B · demonstração", "value": 219 },
+    { "id": "outros", "label": "Outros empreendimentos", "value": 164 }
+  ],
+  "agents": [
+    { "name": "Ana Souza", "area": "Pós-vendas", "areaId": "pos-vendas", "sessions": 186, "firstResponse": "2min 48s", "resolution": 91, "status": "online", "statusLabel": "Online" },
+    { "name": "Carlos Lima", "area": "Comercial", "areaId": "comercial", "sessions": 164, "firstResponse": "3min 21s", "resolution": 88, "status": "busy", "statusLabel": "Ocupado" },
+    { "name": "Marina Alves", "area": "Pós-vendas", "areaId": "pos-vendas", "sessions": 151, "firstResponse": "3min 09s", "resolution": 94, "status": "online", "statusLabel": "Online" },
+    { "name": "Rafael Costa", "area": "Comercial", "areaId": "comercial", "sessions": 129, "firstResponse": "4min 02s", "resolution": 86, "status": "offline", "statusLabel": "Offline" }
+  ],
+  "automationHealth": [
+    { "id": "success", "label": "Concluídas com sucesso", "value": 1087, "detail": "Fluxo finalizado sem erro técnico" },
+    { "id": "not-found", "label": "Informação não localizada", "value": 61, "detail": "Cliente ou documento não encontrado" },
+    { "id": "integration-error", "label": "Erro de integração", "value": 28, "detail": "Falha técnica registrada no fluxo" }
+  ]
+}
+
