@@ -256,7 +256,7 @@ function renderAgents(agents) {
     <td>${escapeHtml(agent.area)}</td>
     <td><strong>${numberFormat.format(agent.sessions)}</strong></td>
     <td>${agent.firstResponse || formatDuration(agent.firstResponseSeconds)}</td>
-    <td>${percentFormat.format(agent.resolution)}%</td>
+    <td>${Number.isFinite(agent.resolution) ? `${percentFormat.format(agent.resolution)}%` : "n/d"}</td>
     <td><span class="status-pill ${escapeHtml(agent.status)}">${escapeHtml(agent.statusLabel)}</span></td>
   </tr>`).join("");
 }
