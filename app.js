@@ -4,6 +4,14 @@ const AUTH_SESSION_URL = "/api/session";
 const AUTH_LOGIN_URL = "/api/login";
 const AUTH_LOGOUT_URL = "/api/logout";
 
+const CHART_COLORS = {
+  bot: "#2f6fed",
+  human: "#eb6a52",
+  success: "#2f9d67",
+  violet: "#7a5af8",
+  amber: "#e1a325",
+};
+
 class AuthRequiredError extends Error {}
 
 const state = {
@@ -252,7 +260,7 @@ function renderSparkline(values) {
     const y = height - ((value - min) / Math.max(1, max - min)) * (height - 5) - 2;
     return `${x},${y}`;
   }).join(" ");
-  $("#sessionsSparkline").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#d1ad70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  $("#sessionsSparkline").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="${CHART_COLORS.bot}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function renderTrendChart(items) {
@@ -277,17 +285,17 @@ function renderTrendChart(items) {
     ? `<text class="chart-axis" x="${x(index)}" y="${height - 6}" text-anchor="middle">${escapeHtml(item.label)}</text>`
     : "").join("");
   const pointRadius = items.length > 31 ? 2 : 4;
-  const botDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.bot)}" r="${pointRadius}" fill="#b58a4a"><title>${item.label}: ${item.bot} via bot</title></circle>`).join("");
-  const humanDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.human)}" r="${pointRadius}" fill="#5f564a"><title>${item.label}: ${item.human} via humano</title></circle>`).join("");
+  const botDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.bot)}" r="${pointRadius}" fill="${CHART_COLORS.bot}"><title>${item.label}: ${item.bot} via bot</title></circle>`).join("");
+  const humanDots = items.map((item, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(item.human)}" r="${pointRadius}" fill="${CHART_COLORS.human}"><title>${item.label}: ${item.human} via humano</title></circle>`).join("");
 
   $("#trendChart").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b58a4a" stop-opacity="0.2"/><stop offset="1" stop-color="#b58a4a" stop-opacity="0.01"/></linearGradient></defs>
+    <defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${CHART_COLORS.bot}" stop-opacity="0.18"/><stop offset="1" stop-color="${CHART_COLORS.bot}" stop-opacity="0.01"/></linearGradient></defs>
     ${grid}<polygon class="chart-area" points="${areaPoints}"/><polyline class="chart-bot" points="${botPoints}"/><polyline class="chart-human" points="${humanPoints}"/>${botDots}${humanDots}${labels}
   </svg>`;
 }
 
 function renderOutcomes(model) {
-  const colors = ["#b58a4a", "#5f564a", "#d1ad70", "#ded5c8"];
+  const colors = [CHART_COLORS.success, CHART_COLORS.bot, CHART_COLORS.violet, CHART_COLORS.amber];
   const actualTotal = model.outcomesTotal || 0;
   const total = actualTotal || 1;
   let cursor = 0;
@@ -335,7 +343,7 @@ function renderAutomation(model) {
   const successful = model.automationHealth.find((item) => item.id === "success")?.value ?? 0;
   const total = model.automationHealth.reduce((sum, item) => sum + item.value, 0) || 1;
   const rate = Math.round(successful / total * 100);
-  $("#automationRing").style.background = `conic-gradient(var(--teal) 0 ${rate}%, #e5dccf ${rate}% 100%)`;
+  $("#automationRing").style.background = `conic-gradient(${CHART_COLORS.success} 0 ${rate}%, #e5dccf ${rate}% 100%)`;
   $("#automationRingValue").textContent = `${rate}%`;
   $("#successfulExecutions").textContent = numberFormat.format(successful);
   $("#healthList").innerHTML = model.automationHealth.map((item) => `<div class="health-row">
