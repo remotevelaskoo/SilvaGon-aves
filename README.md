@@ -31,6 +31,8 @@ Depois abra `http://localhost:4173`.
 
 O arquivo `vercel.json` já adiciona cabeçalhos básicos de segurança. O token real nunca deve ser colocado em `.env.example`, no Git ou em código executado pelo navegador.
 
+Projeto conectado à Vercel para implantação contínua a partir da branch `main`.
+
 ## Alternativa: servidor próprio
 
 Qualquer servidor de arquivos estáticos pode publicar esta versão. Para Nginx ou Apache, copie o conteúdo da pasta para o diretório público do servidor.
@@ -57,4 +59,3 @@ O arquivo demonstrativo já representa o formato consolidado que a interface con
 - `automationHealth`: situação das execuções automatizadas.
 
 Quando houver uma exportação real da Botmaker, este contrato será ajustado às respostas observadas antes da implementação do backend.
-
